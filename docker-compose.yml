@@ -1,0 +1,32 @@
+version: "3.9"  # 🐳 Compose v2 syntax
+
+services:
+  jenkins:
+    image: jenkins/jenkins:lts-jdk17   # Long‑Term‑Support line, bundled with Java 17
+    ports: [ "8080:8080" ]            # Web UI → http://localhost:8080
+    volumes:
+      - jenkins_home:/var/jenkins_home  # Persist plugins, jobs, workspace
+
+  sonar:
+    image: sonarqube:10.5-community    # Latest OSS edition
+    ports: [ "9000:9000" ]            # UI → http://localhost:9000
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS: "false"  # Disable prod‑only checks for laptop use
+
+  nexus:
+    image: sonatype/nexus3:latest
+    ports: [ "8081:8081" ]            # Repository manager UI
+    volumes:
+      - nexus_data:/nexus-data          # Keep Maven/NPM artefacts between runs
+
+  vault:
+    image: hashicorp/vault:1.17
+    ports: [ "8200:8200" ]            # API/UI → http://localhost:8200
+    cap_add: [ "IPC_LOCK" ]            # Allow mlock; prevents secrets swapping to disk
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root     # Auto‑unseal dev mode with fixed token
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+
+volumes:
+  jenkins_home:
+  nexus_data:
